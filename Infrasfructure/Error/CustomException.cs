@@ -1,18 +1,25 @@
-﻿namespace Infrasfructure.Error
+﻿using System.Net;
+
+namespace Infrasfructure.Error
 {
     [Serializable]
-    internal class CustomException : Exception
+    public class CustomException : Exception
     {
-        public CustomException()
+        public HttpStatusCode StatusCode { get; }
+
+        public CustomException(HttpStatusCode statusCode)
         {
+            StatusCode = statusCode;
         }
 
-        public CustomException(string? message) : base(message)
+        public CustomException(HttpStatusCode statusCode, string? message) : base(message)
         {
+            StatusCode = statusCode;
         }
 
-        public CustomException(string? message, Exception? innerException) : base(message, innerException)
+        public CustomException(HttpStatusCode statusCode, string? message, Exception? innerException) : base(message, innerException)
         {
+            StatusCode = statusCode;
         }
     }
 }

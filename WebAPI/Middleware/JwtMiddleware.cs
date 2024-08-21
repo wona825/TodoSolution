@@ -1,5 +1,7 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Infrasfructure.Error;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 
@@ -53,8 +55,7 @@ namespace WebAPI.Middleware
             }
             catch
             {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                context.Response.WriteAsync("Invalid token").Wait();
+                throw new CustomException(HttpStatusCode.Unauthorized, "Invalid token");
             }
         }
     }

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -28,10 +29,10 @@ namespace Infrasfructure.Repo
         public async Task<LoginResponse> LoginUserAsync(LoginRequest loginRequest)
         {
 
-            var getUser = await FindUserByUserName(loginRequest.UserName) ?? throw new CustomException("User not found.");
+            var getUser = await FindUserByUserName(loginRequest.UserName) ?? throw new CustomException(HttpStatusCode.Unauthorized, "Authenticate Fail");
 
             if (!BCrypt.Net.BCrypt.Verify(loginRequest.Password, getUser.HashPassword))
-                throw new CustomException("Wrong password.");
+                throw new CustomException(HttpStatusCode.Unauthorized, "Wrong password.");
 
             string accessToken = GenerateAccessToken(getUser);
 
@@ -99,9 +100,9 @@ namespace Infrasfructure.Repo
             var getUser = await FindUserByUserName(registerUserRequest.UserName);
 
             if (getUser != null)
-                throw new CustomException("User already exist");
+                throw new CustomException(HttpStatusCode.Conflict, "User already exist");
 
-            ApplicationUser user = new()
+            ApplicationUser user = new()                                                              
             {
                 UserName = registerUserRequest.UserName,
                 HashPassword = BCrypt.Net.BCrypt.HashPassword(registerUserRequest.Password),
