@@ -13,50 +13,25 @@ TodoSolution
 │
 ├── Application
 │   ├── Contracts
-│   │   └── IAuth.cs
 │   ├── DTOs
 │   │   ├── Request
-│   │   │   ├── LoginRequest.cs
-│   │   │   ├── RefreshTokenRequest.cs
-│   │   │   └── RegisterUserRequest.cs
 │   │   └── Response
-│   │       ├── LoginResponse.cs
-│   │       ├── RefreshTokenResponse.cs
-│   │       └── RegisterUserResponse.cs
-│   └── Application.csproj
 │
 ├── Domain
-│   ├── Entities
-│   │   ├── ApplicationUser.cs
-│   │   └── Token.cs
-│   └── Domain.csproj
+│   └── Entities
 │
 ├── Infrastructure
 │   ├── Data
-│   │   └── AppDbContext.cs
 │   ├── DependencyInjection
-│   │   └── ServiceContainer.cs
 │   ├── Error
-│   │   └── CustomException.cs
 │   ├── Migrations
-│   │   ├── 20240821194219_First.cs
-│   │   ├── 20240821194219_First.Designer.cs
-│   │   └── AppDbContextModelSnapshot.cs
-│   ├── Repo
-│   │   └── AuthRepo.cs
-│   └── Infrastructure.csproj
+│   └── Repo
 │
 └── WebAPI
     ├── Controllers
-    │   ├── AuthController.cs
-    │   └── WeatherForecastController.cs
     ├── Middleware
-    │   ├── ExceptionHandlingMiddleware.cs
-    │   └── JwtMiddleware.cs
     ├── appsettings.json
-    ├── Program.cs
-    └── WebAPI.csproj
-
+    └── Program.cs
 ```
 
 ## 1. 의존성 복원
@@ -85,8 +60,3 @@ TodoSolution
 
 서버에서 실행하려면, `WebAPI` 프로젝트 디렉토리에서 다음 명령어를 실행하세요: `dotnet ./publish/WebAPI.dll`
 이제 서버가 실행되고, API에 접근할 수 있습니다. (포트가 변경될 수 있으니 터미널을 확인해주세요.)
-
-## 추가 정보
-
-- [ASP.NET Core 문서](https://docs.microsoft.com/aspnet/core)
-- [Entity Framework Core 문서](https://docs.microsoft.com/ef/core)
