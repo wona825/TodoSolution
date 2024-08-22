@@ -133,13 +133,13 @@ namespace Infrasfructure.Repo
 
             if (storedToken == null || storedToken.ExpiresAt <= DateTime.Now || storedToken.RevokedAt != null)
             {
-                throw new SecurityTokenException("Invalid refresh token");
+                throw new CustomException(HttpStatusCode.Unauthorized ,"Invalid refresh token");
             }
 
             var principal = GetPrincipalFromExpiredToken(refreshTokenRequest.AccessToken);
             var userId = int.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             if (storedToken.UserId != userId)
-                throw new SecurityTokenException("Invalid refresh token");
+                throw new CustomException(HttpStatusCode.Unauthorized, "Invalid access token");
 
             var newAccessToken = GenerateAccessToken(storedToken.ApplicationUser);
 
@@ -165,7 +165,7 @@ namespace Infrasfructure.Repo
             var jwtSecurityToken = securityToken as JwtSecurityToken;
 
             if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                throw new SecurityTokenException("Invalid access token");
+                throw new CustomException(HttpStatusCode.Unauthorized, "Invalid access token");
 
             return principal;
         }
