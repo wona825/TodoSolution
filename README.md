@@ -9,11 +9,54 @@
 
 ## 프로젝트 구조
 ```
-Solution
-│ ├── Application
-│ ├── Domain
-│ ├── Infrastructure
-│ └── WebAPI
+TodoSolution
+│
+├── Application
+│   ├── Contracts
+│   │   └── IAuth.cs
+│   ├── DTOs
+│   │   ├── Request
+│   │   │   ├── LoginRequest.cs
+│   │   │   ├── RefreshTokenRequest.cs
+│   │   │   └── RegisterUserRequest.cs
+│   │   └── Response
+│   │       ├── LoginResponse.cs
+│   │       ├── RefreshTokenResponse.cs
+│   │       └── RegisterUserResponse.cs
+│   └── Application.csproj
+│
+├── Domain
+│   ├── Entities
+│   │   ├── ApplicationUser.cs
+│   │   └── Token.cs
+│   └── Domain.csproj
+│
+├── Infrastructure
+│   ├── Data
+│   │   └── AppDbContext.cs
+│   ├── DependencyInjection
+│   │   └── ServiceContainer.cs
+│   ├── Error
+│   │   └── CustomException.cs
+│   ├── Migrations
+│   │   ├── 20240821194219_First.cs
+│   │   ├── 20240821194219_First.Designer.cs
+│   │   └── AppDbContextModelSnapshot.cs
+│   ├── Repo
+│   │   └── AuthRepo.cs
+│   └── Infrastructure.csproj
+│
+└── WebAPI
+    ├── Controllers
+    │   ├── AuthController.cs
+    │   └── WeatherForecastController.cs
+    ├── Middleware
+    │   ├── ExceptionHandlingMiddleware.cs
+    │   └── JwtMiddleware.cs
+    ├── appsettings.json
+    ├── Program.cs
+    └── WebAPI.csproj
+
 ```
 
 ## 1. 의존성 복원
