@@ -41,8 +41,8 @@ namespace Infrastructure.DependencyInjection
                 };
             });
 
-
             services.AddScoped<IAuth, AuthRepo>();
+            services.AddScoped<ITodo, TodoRepo>();
 
             return services;
         }

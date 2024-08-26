@@ -1,27 +1,31 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Domain.Enums;
 
 namespace Domain.Entites
 {
-    public class ApplicationUser
+    public class Todo
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
         [Required]
-        public required string UserName { get; set; }
+        public required string Title { get; set; }
 
         [Required]
-        public required string HashPassword { get; set; }
+        public required string Description { get; set; }
+
+        [Required]
+        public required TodoStatus Status { get; set; }
 
         [Required]
         public required DateTime CreatedAt { get; set; }
 
         public DateTime? DisabledAt { get; set; }
 
-        public Token? Token { get; set; }
+        public int? OwnerId { get; set; }
 
-        public ICollection<Todo> Todos { get; set; } = new List<Todo>();
+        public ApplicationUser? Owner { get; set; }
     }
 }

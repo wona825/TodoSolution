@@ -1,4 +1,5 @@
 ﻿using Infrasfructure.Error;
+using Microsoft.IdentityModel.Tokens;
 using System.Net;
 
 namespace WebAPI.Middleware
@@ -24,7 +25,7 @@ namespace WebAPI.Middleware
             }
             catch (Exception ex)
             {
-                await HandleExceptionAsync(context, HttpStatusCode.InternalServerError, "An unexpected error occurred.");
+                await HandleExceptionAsync(context, HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 

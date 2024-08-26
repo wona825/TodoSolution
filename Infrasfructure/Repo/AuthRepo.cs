@@ -17,13 +17,13 @@ namespace Infrasfructure.Repo
 {
     internal class AuthRepo : IAuth
     {
-        private readonly AppDbContext appDbContext;
-        private readonly IConfiguration configuration;
+        private readonly AppDbContext _appDbContext;
+        private readonly IConfiguration _configuration;
 
         public AuthRepo(AppDbContext appDbContext, IConfiguration configuration)
         {
-            this.appDbContext = appDbContext;
-            this.configuration = configuration;
+            this._appDbContext = appDbContext;
+            this._configuration = configuration;
         }
 
         public async Task<LoginResponse> LoginUserAsync(LoginRequest loginRequest)
@@ -36,7 +36,7 @@ namespace Infrasfructure.Repo
 
             string accessToken = GenerateAccessToken(getUser);
 
-            Token? token = await appDbContext.Tokens.FirstOrDefaultAsync(t => t.UserId == getUser.Id);
+            Token? token = await _appDbContext.Tokens.FirstOrDefaultAsync(t => t.UserId == getUser.Id);
 
             string refreshToken = GenerateRefreshToken();
             if (token == null)
@@ -44,37 +44,37 @@ namespace Infrasfructure.Repo
                 token = new Token()
                 {
                     RefreshToken = refreshToken,
-                    ExpiresAt = DateTime.Now.AddDays(int.Parse(configuration["Jwt:RefreshTokenExpiryDays"]!)),
+                    ExpiresAt = DateTime.Now.AddDays(int.Parse(_configuration["Jwt:RefreshTokenExpiryDays"]!)),
                     CreatedAt = DateTime.Now,
                     UserId = getUser.Id,
                     ApplicationUser = getUser
                 };
 
-                appDbContext.Tokens.Add(token);
+                _appDbContext.Tokens.Add(token);
             }
             else
             {
                 token.RefreshToken = refreshToken;
                 token.CreatedAt = DateTime.Now;
-                token.ExpiresAt = token.CreatedAt.AddDays(int.Parse(configuration["Jwt:RefreshTokenExpiryDays"]!));
+                token.ExpiresAt = token.CreatedAt.AddDays(int.Parse(_configuration["Jwt:RefreshTokenExpiryDays"]!));
 
-                appDbContext.Tokens.Update(token);
+                _appDbContext.Tokens.Update(token);
             }
-            await appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync();
 
             return new LoginResponse(getUser.Id, accessToken, token.RefreshToken);
         }
 
         private string GenerateAccessToken(ApplicationUser user)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var userClaims = new[] { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var token = new JwtSecurityToken(
-                issuer: configuration["Jwt:Issuer"],
-                audience: configuration["Jwt:Audience"],
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
                 claims: userClaims,
-                expires: DateTime.Now.AddMinutes(int.Parse(configuration["Jwt:AccessTokenExpiryMinutes"]!)),
+                expires: DateTime.Now.AddMinutes(int.Parse(_configuration["Jwt:AccessTokenExpiryMinutes"]!)),
                 signingCredentials: credentials
                );
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -93,7 +93,7 @@ namespace Infrasfructure.Repo
         }
 
         private async Task<ApplicationUser?> FindUserByUserName(string UserName) =>
-            await appDbContext.Users.FirstOrDefaultAsync(u => u.UserName == UserName);
+            await _appDbContext.Users.FirstOrDefaultAsync(u => u.UserName == UserName);
 
         public async Task<RegisterUserResponse> RegisterUserAsync(RegisterUserRequest registerUserRequest)
         {
@@ -108,26 +108,26 @@ namespace Infrasfructure.Repo
                 HashPassword = BCrypt.Net.BCrypt.HashPassword(registerUserRequest.Password),
                 CreatedAt = DateTime.Now
             };
-            await appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync();
 
             string refreshToken = GenerateRefreshToken();
 
-            appDbContext.Tokens.Add(new Token()
+            _appDbContext.Tokens.Add(new Token()
             {
                 RefreshToken = refreshToken,
-                ExpiresAt = DateTime.Now.AddDays(int.Parse(configuration["Jwt:RefreshTokenExpiryDays"]!)),
+                ExpiresAt = DateTime.Now.AddDays(int.Parse(_configuration["Jwt:RefreshTokenExpiryDays"]!)),
                 CreatedAt = DateTime.Now,
                 UserId = user.Id,
                 ApplicationUser = user
             });
 
-            await appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync();
             return new RegisterUserResponse(user.Id, GenerateAccessToken(user), refreshToken);
         }
 
         public async Task<RefreshTokenResponse> RefreshTokenAsync(RefreshTokenRequest refreshTokenRequest)
         {
-            var storedToken = await appDbContext.Tokens
+            var storedToken = await _appDbContext.Tokens
                 .Include(t => t.ApplicationUser)
                 .SingleOrDefaultAsync(t => t.RefreshToken == refreshTokenRequest.RefreshToken);
 
@@ -143,7 +143,7 @@ namespace Infrasfructure.Repo
 
             var newAccessToken = GenerateAccessToken(storedToken.ApplicationUser);
 
-            await appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync();
 
             return new RefreshTokenResponse(newAccessToken);
         }
@@ -155,7 +155,7 @@ namespace Infrasfructure.Repo
                 ValidateAudience = false,
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)),
                 ValidateLifetime = false
             };
 

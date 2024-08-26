@@ -9,12 +9,12 @@ namespace WebAPI.Controllers
     [ApiController]
     public class AuthController(IAuth auth) : ControllerBase
     {
-        private readonly IAuth auth = auth;
+        private readonly IAuth _auth = auth;
 
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponse>> LogUserIn(LoginRequest loginRequest)
         {
-            var result = await auth.LoginUserAsync(loginRequest);
+            var result = await _auth.LoginUserAsync(loginRequest);
             return Ok(result);
         }
 
@@ -22,14 +22,14 @@ namespace WebAPI.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<LoginResponse>> RegisterUser(RegisterUserRequest registerUserRequest)
         {
-            var result = await auth.RegisterUserAsync(registerUserRequest);
+            var result = await _auth.RegisterUserAsync(registerUserRequest);
             return Ok(result);
         }
 
         [HttpPost("refresh-token")]
         public async Task<ActionResult<RefreshTokenResponse>> RefreshToken(RefreshTokenRequest refreshTokenRequest)
         {
-            var result = await auth.RefreshTokenAsync(refreshTokenRequest);
+            var result = await _auth.RefreshTokenAsync(refreshTokenRequest);
             return Ok(result);
         }
     }
