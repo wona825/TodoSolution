@@ -29,7 +29,7 @@ namespace WebAPI.Controllers
             }
         }
 
-        [HttpGet(), Authorize]
+        [HttpGet()]
         public async Task<PagedTodoResponse> GetAllTodosAsync(
             [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "todo_status")] TodoStatus? todoStatus,
             [FromQuery(Name = "page_number")] int? pageNumber,
