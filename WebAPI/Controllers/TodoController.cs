@@ -1,5 +1,7 @@
 ﻿using System.Net;
+using System.Security.Claims;
 using Application.Contracts;
+using Application.DTOs.Request;
 using Application.DTOs.Response;
 using Domain.Enums;
 using Infrasfructure.Error;
@@ -32,11 +34,35 @@ namespace WebAPI.Controllers
         [HttpGet()]
         public async Task<PagedTodoResponse> GetAllTodosAsync(
             [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "todo_status")] TodoStatus? todoStatus,
+            [FromQuery] string? username,
+            [FromQuery] string? search,
             [FromQuery(Name = "page_number")] int? pageNumber,
             [FromQuery(Name = "page_size")] int? pageSize)
         {
-            var todos = await _todo.GetAllTodosAsync(todoStatus, pageNumber, pageSize);
+            var todos = await _todo.GetAllTodosAsync(todoStatus, username, search, pageNumber, pageSize);
             return todos;
+        }
+
+        [HttpPatch("{id}/status"), Authorize]
+        public async Task<IActionResult> UpdateTodoStatusAsync(
+            int id,
+            [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "new_status")] TodoStatus newStatus)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? throw new CustomException(HttpStatusCode.Unauthorized, "User ID not found in token."));
+
+            await _todo.UpdateTodoStatusAsync(id, newStatus, userId);
+            return Ok();
+        }
+
+        [HttpPatch("{id}"), Authorize]
+        public async Task<IActionResult> UpdateTodoDetailsAsync(int id, [FromBody] UpdateTodoDetailsRequest updateTodoDetailsRequest)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? throw new CustomException(HttpStatusCode.Unauthorized, "User ID not found in token."));
+
+            await _todo.UpdateTodoDetailsAsync(id, updateTodoDetailsRequest, userId);
+            return Ok();
         }
     }
 }

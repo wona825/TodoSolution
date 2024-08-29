@@ -1,6 +1,6 @@
-﻿using System.Globalization;
-using System.Net;
+﻿using System.Net;
 using Application.Contracts;
+using Application.DTOs.Request;
 using Application.DTOs.Response;
 using Domain.Entites;
 using Domain.Enums;
@@ -85,8 +85,7 @@ namespace Infrasfructure.Repo
             return todos.Count;
         }
 
-
-        public async Task<PagedTodoResponse> GetAllTodosAsync(TodoStatus? todoStatus, int? pageNum, int? pageSize)
+        public async Task<PagedTodoResponse> GetAllTodosAsync(TodoStatus? todoStatus, string? username, string? search, int? pageNum, int? pageSize)
         {
             var query = _appDbContext.Todos
                 .Include(todo => todo.Owner)
@@ -97,33 +96,26 @@ namespace Infrasfructure.Repo
                 query = query.Where(todo => todo.Status == todoStatus.Value);
             }
 
+            // 검색 필터링 (Title)
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(todo =>
+                    todo.Title.Contains(search));
+            }
+
+            // 검색 필터링 (Username)
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                query = query.Where(todo =>
+                    todo.Owner != null && todo.Owner.UserName.Contains(username));
+            }
+
             int totalCount = await query.CountAsync();
-
-            // 기본 페이지 크기 설정
-            int defaultPageSize = pageSize ?? totalCount;
-
-            int defaultPageNum;
-
-            if (totalCount != 0)
-            {
-                defaultPageNum = pageNum ?? 1; 
-            }
-            else
-            {
-                defaultPageNum = 0; 
-            }
-
-            // 페이지 계산
+            int defaultPageSize = pageSize.GetValueOrDefault(totalCount); 
+            int defaultPageNum = Math.Max(pageNum.GetValueOrDefault(1), 1); 
             int skip = (defaultPageNum - 1) * defaultPageSize;
 
-            if (skip > totalCount || (totalCount > 0 && defaultPageNum == 0))
-            {
-                throw new CustomException(HttpStatusCode.NotFound, "Requested page does not exist."); 
-            }
-
             var todos = await query.Skip(skip).Take(defaultPageSize).ToListAsync();
-
-            // 전체 페이지 수 계산
             int totalPages = (int)Math.Ceiling(totalCount / (double)defaultPageSize);
 
             return new PagedTodoResponse(
@@ -140,6 +132,69 @@ namespace Infrasfructure.Repo
                 totalPages,
                 defaultPageNum
             );
+        }
+
+        public async Task UpdateTodoStatusAsync(int id, TodoStatus newStatus, int userId)
+        {
+            var user = await _appDbContext.Users.FindAsync(userId) ?? throw new CustomException(HttpStatusCode.Unauthorized, "User not found in the database.");
+
+            var todo = await _appDbContext.Todos
+                .Include(t => t.Owner)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (todo == null)
+            {
+                throw new CustomException(HttpStatusCode.NotFound, "Todo not found.");
+            }
+
+            if (todo.OwnerId.HasValue && todo.OwnerId != userId)
+            {
+                throw new CustomException(HttpStatusCode.Forbidden, "No permission to update todo.");
+            }
+
+            if (todo.Status != TodoStatus.BackLog && newStatus == TodoStatus.BackLog)
+            {
+                throw new CustomException(HttpStatusCode.Forbidden, "No permission to move todo to BackLog status.");
+            }
+
+            if (newStatus != TodoStatus.BackLog)
+            {
+                todo.Status = newStatus;
+                todo.Owner = user;
+                todo.OwnerId = userId;
+            }
+            await _appDbContext.SaveChangesAsync();
+        }
+
+        public async Task UpdateTodoDetailsAsync(int id, UpdateTodoDetailsRequest updateTodoDetailsRequest, int userId)
+        {
+            var user = await _appDbContext.Users.FindAsync(userId) ?? throw new CustomException(HttpStatusCode.Unauthorized, "User not found in the database.");
+
+            var todo = await _appDbContext.Todos
+                .Include(t => t.Owner)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (todo == null)
+            {
+                throw new CustomException(HttpStatusCode.NotFound, "Todo not found.");
+            }
+
+            if (todo.OwnerId != userId)
+            {
+                throw new CustomException(HttpStatusCode.Forbidden, "No permission to update todo details.");
+            }
+
+            if (updateTodoDetailsRequest.Title != null)
+            {
+                todo.Title = updateTodoDetailsRequest.Title;
+            }
+
+            if (updateTodoDetailsRequest.Description != null)
+            {
+                todo.Description = updateTodoDetailsRequest.Description;
+            }
+
+            await _appDbContext.SaveChangesAsync();
         }
     }
 }
