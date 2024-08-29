@@ -35,11 +35,11 @@ namespace WebAPI.Controllers
         public async Task<PagedTodoResponse> GetAllTodosAsync(
             [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "todo_status")] TodoStatus? todoStatus,
             [FromQuery] string? username,
-            [FromQuery] string? search,
+            [FromQuery] string? title,
             [FromQuery(Name = "page_number")] int? pageNumber,
             [FromQuery(Name = "page_size")] int? pageSize)
         {
-            var todos = await _todo.GetAllTodosAsync(todoStatus, username, search, pageNumber, pageSize);
+            var todos = await _todo.GetAllTodosAsync(todoStatus, username, title, pageNumber, pageSize);
             return todos;
         }
 

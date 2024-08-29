@@ -85,7 +85,7 @@ namespace Infrasfructure.Repo
             return todos.Count;
         }
 
-        public async Task<PagedTodoResponse> GetAllTodosAsync(TodoStatus? todoStatus, string? username, string? search, int? pageNum, int? pageSize)
+        public async Task<PagedTodoResponse> GetAllTodosAsync(TodoStatus? todoStatus, string? username, string? title, int? pageNum, int? pageSize)
         {
             var query = _appDbContext.Todos
                 .Include(todo => todo.Owner)
@@ -97,10 +97,10 @@ namespace Infrasfructure.Repo
             }
 
             // 검색 필터링 (Title)
-            if (!string.IsNullOrWhiteSpace(search))
+            if (!string.IsNullOrWhiteSpace(title))
             {
                 query = query.Where(todo =>
-                    todo.Title.Contains(search));
+                    todo.Title.Contains(title));
             }
 
             // 검색 필터링 (Username)
