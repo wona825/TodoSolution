@@ -67,7 +67,7 @@ namespace WebAPI.Controllers
             return Ok();
         }
 
-        [HttpDelete("id"), Authorize]
+        [HttpDelete("{id}"), Authorize]
         public async Task<IActionResult> SoftDeleteTodoAsync(int id)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
