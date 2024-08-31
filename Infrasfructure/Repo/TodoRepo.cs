@@ -19,6 +19,14 @@ namespace Infrasfructure.Repo
         {
             this._appDbContext = appDbContext;
         }
+
+
+        /// <summary>
+        /// Excel을 통한 투두 데이터 import 메소드 
+        /// </summary>
+        /// <param name="fileStream"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
         public async Task<int> ImportTodosAsync(Stream fileStream)
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -85,6 +93,16 @@ namespace Infrasfructure.Repo
             return todos.Count;
         }
 
+
+        /// <summary>
+        /// 필터링을 통한 투두 데이터 리스트 조회 메소드 
+        /// </summary>
+        /// <param name="todoStatus"></param>
+        /// <param name="username"></param>
+        /// <param name="title"></param>
+        /// <param name="pageNum"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
         public async Task<PagedTodoResponse> GetAllTodosAsync(TodoStatus? todoStatus, string? username, string? title, int? pageNum, int? pageSize)
         {
             var query = _appDbContext.Todos
@@ -134,18 +152,26 @@ namespace Infrasfructure.Repo
             );
         }
 
+
+        /// <summary>
+        /// 투두 status 수정 메소드 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="newStatus"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
         public async Task UpdateTodoStatusAsync(int id, TodoStatus newStatus, int userId)
         {
-            var user = await _appDbContext.Users.FindAsync(userId) ?? throw new CustomException(HttpStatusCode.Unauthorized, "User not found in the database.");
+            var user = await _appDbContext.Users
+                .Where(u => u.Id == userId && u.DisabledAt == null)
+                .FirstOrDefaultAsync()
+                ?? throw new CustomException(HttpStatusCode.NotFound, "User not found.");
 
             var todo = await _appDbContext.Todos
                 .Include(t => t.Owner)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-            if (todo == null)
-            {
-                throw new CustomException(HttpStatusCode.NotFound, "Todo not found.");
-            }
+                .FirstOrDefaultAsync(t => t.Id == id)
+                ?? throw new CustomException(HttpStatusCode.NotFound, "Todo not found.");
 
             if (todo.OwnerId.HasValue && todo.OwnerId != userId)
             {
@@ -154,7 +180,7 @@ namespace Infrasfructure.Repo
 
             if (todo.Status != TodoStatus.BackLog && newStatus == TodoStatus.BackLog)
             {
-                throw new CustomException(HttpStatusCode.Forbidden, "No permission to move todo to BackLog status.");
+                throw new CustomException(HttpStatusCode.BadRequest, "Cannot move todo to BackLog status.");
             }
 
             if (newStatus != TodoStatus.BackLog)
@@ -166,18 +192,26 @@ namespace Infrasfructure.Repo
             await _appDbContext.SaveChangesAsync();
         }
 
+
+        /// <summary>
+        /// 투두 details(title, description) 수정 메소드 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="updateTodoDetailsRequest"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
         public async Task UpdateTodoDetailsAsync(int id, UpdateTodoDetailsRequest updateTodoDetailsRequest, int userId)
         {
-            var user = await _appDbContext.Users.FindAsync(userId) ?? throw new CustomException(HttpStatusCode.Unauthorized, "User not found in the database.");
+            var user = await _appDbContext.Users
+                .Where(u => u.Id == userId && u.DisabledAt == null)
+                .FirstOrDefaultAsync()
+                ?? throw new CustomException(HttpStatusCode.NotFound, "User not found.");
 
             var todo = await _appDbContext.Todos
                 .Include(t => t.Owner)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-            if (todo == null)
-            {
-                throw new CustomException(HttpStatusCode.NotFound, "Todo not found.");
-            }
+                .FirstOrDefaultAsync(t => t.Id == id)
+                ?? throw new CustomException(HttpStatusCode.NotFound, "Todo not found.");
 
             if (todo.OwnerId != userId)
             {
@@ -194,6 +228,35 @@ namespace Infrasfructure.Repo
                 todo.Description = updateTodoDetailsRequest.Description;
             }
 
+            await _appDbContext.SaveChangesAsync();
+        }
+
+
+        /// <summary>
+        /// 투두 소프트 삭제 메소드 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
+        public async Task SoftDeleteTodoAsync(int id, int userId)
+        {
+            var user = await _appDbContext.Users
+                .Where(u => u.Id == userId && u.DisabledAt == null)
+                .FirstOrDefaultAsync()
+                ?? throw new CustomException(HttpStatusCode.NotFound, "User not found.");
+
+            var todo = await _appDbContext.Todos
+                .Include(t => t.Owner)
+                .FirstOrDefaultAsync(t => t.Id == id)
+                ?? throw new CustomException(HttpStatusCode.NotFound, "Todo not found.");
+
+            if (todo.OwnerId != userId)
+            {
+                throw new CustomException(HttpStatusCode.Forbidden, "No permission to update todo details.");
+            }
+
+            todo.DisabledAt = DateTime.Now;
             await _appDbContext.SaveChangesAsync();
         }
     }

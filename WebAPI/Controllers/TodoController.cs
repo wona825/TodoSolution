@@ -32,7 +32,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet()]
-        public async Task<PagedTodoResponse> GetAllTodosAsync(
+        public async Task<ActionResult<PagedTodoResponse>> GetAllTodosAsync(
             [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "todo_status")] TodoStatus? todoStatus,
             [FromQuery] string? username,
             [FromQuery] string? title,
@@ -40,7 +40,7 @@ namespace WebAPI.Controllers
             [FromQuery(Name = "page_size")] int? pageSize)
         {
             var todos = await _todo.GetAllTodosAsync(todoStatus, username, title, pageNumber, pageSize);
-            return todos;
+            return Ok(todos);
         }
 
         [HttpPatch("{id}/status"), Authorize]
@@ -49,19 +49,31 @@ namespace WebAPI.Controllers
             [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "new_status")] TodoStatus newStatus)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-             ?? throw new CustomException(HttpStatusCode.Unauthorized, "User ID not found in token."));
+                ?? throw new CustomException(HttpStatusCode.Unauthorized, "User ID not found in token."));
 
             await _todo.UpdateTodoStatusAsync(id, newStatus, userId);
             return Ok();
         }
 
         [HttpPatch("{id}"), Authorize]
-        public async Task<IActionResult> UpdateTodoDetailsAsync(int id, [FromBody] UpdateTodoDetailsRequest updateTodoDetailsRequest)
+        public async Task<IActionResult> UpdateTodoDetailsAsync(
+            int id,
+            [FromBody] UpdateTodoDetailsRequest updateTodoDetailsRequest)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-             ?? throw new CustomException(HttpStatusCode.Unauthorized, "User ID not found in token."));
+                ?? throw new CustomException(HttpStatusCode.Unauthorized, "User ID not found in token."));
 
             await _todo.UpdateTodoDetailsAsync(id, updateTodoDetailsRequest, userId);
+            return Ok();
+        }
+
+        [HttpDelete("id"), Authorize]
+        public async Task<IActionResult> SoftDeleteTodoAsync(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? throw new CustomException(HttpStatusCode.Unauthorized, "User ID not found in token."));
+
+            await _todo.SoftDeleteTodoAsync(id, userId);
             return Ok();
         }
     }
