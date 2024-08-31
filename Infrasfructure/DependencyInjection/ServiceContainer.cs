@@ -43,6 +43,7 @@ namespace Infrastructure.DependencyInjection
 
             services.AddScoped<IAuth, AuthRepo>();
             services.AddScoped<ITodo, TodoRepo>();
+            services.AddScoped<IUser, UserRepo>();
 
             return services;
         }
