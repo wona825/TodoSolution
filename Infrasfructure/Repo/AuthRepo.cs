@@ -26,10 +26,22 @@ namespace Infrasfructure.Repo
             this._configuration = configuration;
         }
 
-        public async Task<LoginResponse> LoginUserAsync(LoginRequest loginRequest)
-        {
 
-            var getUser = await FindUserByUserName(loginRequest.UserName) ?? throw new CustomException(HttpStatusCode.Unauthorized, "Authenticate Fail");
+        /// <summary>
+        /// 유저 로그인 메소드
+        /// </summary>
+        /// <param name="loginRequest"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
+        public async Task<LoginResponse> LoginAsync(LoginRequest loginRequest)
+        {
+            var getUser = await FindUserByUserName(loginRequest.UserName)
+                ?? throw new CustomException(HttpStatusCode.Unauthorized, "Authenticate Fail.");
+
+            if (getUser.DisabledAt != null)
+            {
+                throw new CustomException(HttpStatusCode.Forbidden, "This account has been deleted. Contact support.");
+            }
 
             if (!BCrypt.Net.BCrypt.Verify(loginRequest.Password, getUser.HashPassword))
                 throw new CustomException(HttpStatusCode.Unauthorized, "Wrong password.");
@@ -65,6 +77,12 @@ namespace Infrasfructure.Repo
             return new LoginResponse(getUser.Id, accessToken, token.RefreshToken);
         }
 
+
+        /// <summary>
+        /// Access Token 발급 메소드  
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
         private string GenerateAccessToken(ApplicationUser user)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
@@ -80,6 +98,11 @@ namespace Infrasfructure.Repo
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+
+        /// <summary>
+        /// Refresh Token 발급 메소드 
+        /// </summary>
+        /// <returns></returns>
         private string GenerateRefreshToken()
         {
             var randomNumber = new byte[32];
@@ -92,15 +115,28 @@ namespace Infrasfructure.Repo
             }
         }
 
-        private async Task<ApplicationUser?> FindUserByUserName(string UserName) =>
-            await _appDbContext.Users.FirstOrDefaultAsync(u => u.UserName == UserName);
 
+        /// <summary>
+        /// 유저명으로 유저 조회하는 메소드 
+        /// </summary>
+        /// <param name="UserName"></param>
+        /// <returns></returns>
+        private async Task<ApplicationUser?> FindUserByUserName(string userName) =>
+            await _appDbContext.Users.FirstOrDefaultAsync(u => u.UserName == userName);
+
+
+        /// <summary>
+        /// 유저 회원가입 메소드 
+        /// </summary>
+        /// <param name="registerUserRequest"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
         public async Task<RegisterUserResponse> RegisterUserAsync(RegisterUserRequest registerUserRequest)
         {
             var getUser = await FindUserByUserName(registerUserRequest.UserName);
 
             if (getUser != null)
-                throw new CustomException(HttpStatusCode.Conflict, "User already exist");
+                throw new CustomException(HttpStatusCode.Conflict, "User already exist.");
 
             ApplicationUser user = new()                                                              
             {
@@ -125,6 +161,13 @@ namespace Infrasfructure.Repo
             return new RegisterUserResponse(user.Id, GenerateAccessToken(user), refreshToken);
         }
 
+
+        /// <summary>
+        /// Access Token 재발급 메소드 
+        /// </summary>
+        /// <param name="refreshTokenRequest"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
         public async Task<RefreshTokenResponse> RefreshTokenAsync(RefreshTokenRequest refreshTokenRequest)
         {
             var storedToken = await _appDbContext.Tokens
@@ -148,6 +191,13 @@ namespace Infrasfructure.Repo
             return new RefreshTokenResponse(newAccessToken);
         }
 
+
+        /// <summary>
+        /// 만료된 Access Token에서 ClaimsPrincipal를 반환하는 메소드 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
         private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {
             var tokenValidationParameters = new TokenValidationParameters
@@ -168,6 +218,25 @@ namespace Infrasfructure.Repo
                 throw new CustomException(HttpStatusCode.Unauthorized, "Invalid access token");
 
             return principal;
+        }
+
+
+        /// <summary>
+        /// 유저 로그아웃 메소드 
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        /// <exception cref="CustomException"></exception>
+        public async Task LogoutAsync(int userId)
+        {
+            var refreshToken = await _appDbContext.Tokens
+                .FirstOrDefaultAsync(t => t.Id == userId);
+
+            if (refreshToken != null)
+            {
+                _appDbContext.Tokens.Remove(refreshToken);
+            }
+            await _appDbContext.SaveChangesAsync();
         }
     }
 }

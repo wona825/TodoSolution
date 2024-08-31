@@ -1,5 +1,4 @@
 ﻿using Infrasfructure.Error;
-using Microsoft.IdentityModel.Tokens;
 using System.Net;
 
 namespace WebAPI.Middleware
@@ -37,5 +36,4 @@ namespace WebAPI.Middleware
             return context.Response.WriteAsync(result);
         }
     }
-
 }

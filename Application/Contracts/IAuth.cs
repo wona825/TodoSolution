@@ -6,7 +6,8 @@ namespace Application.Contracts
     public interface IAuth
     {
         Task<RegisterUserResponse> RegisterUserAsync(RegisterUserRequest registerUserRequest);
-        Task<LoginResponse> LoginUserAsync(LoginRequest loginRequest);
+        Task<LoginResponse> LoginAsync(LoginRequest loginRequest);
         Task<RefreshTokenResponse> RefreshTokenAsync(RefreshTokenRequest refreshTokenRequest);
+        Task LogoutAsync(int userId);
     }
 }
