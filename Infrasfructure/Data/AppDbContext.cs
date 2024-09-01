@@ -9,13 +9,13 @@ namespace Infrasfructure.Data
         {
         }
 
-        public DbSet<ApplicationUser> Users { get; set; }
+        public DbSet<User> Users { get; set; }
         public DbSet<Token> Tokens { get; set; }
         public DbSet<Todo> Todos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<ApplicationUser>()
+            modelBuilder.Entity<User>()
                 .HasOne(u => u.Token)
                 .WithOne(t => t.ApplicationUser)
                 .HasForeignKey<Token>(t => t.UserId);

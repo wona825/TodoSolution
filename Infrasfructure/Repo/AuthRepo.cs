@@ -83,7 +83,7 @@ namespace Infrasfructure.Repo
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        private string GenerateAccessToken(ApplicationUser user)
+        private string GenerateAccessToken(User user)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -121,7 +121,7 @@ namespace Infrasfructure.Repo
         /// </summary>
         /// <param name="UserName"></param>
         /// <returns></returns>
-        private async Task<ApplicationUser?> FindUserByUserName(string userName) =>
+        private async Task<User?> FindUserByUserName(string userName) =>
             await _appDbContext.Users.FirstOrDefaultAsync(u => u.UserName == userName);
 
 
@@ -138,7 +138,7 @@ namespace Infrasfructure.Repo
             if (getUser != null)
                 throw new CustomException(HttpStatusCode.Conflict, "User already exist.");
 
-            ApplicationUser user = new()                                                              
+            User user = new()                                                              
             {
                 UserName = registerUserRequest.UserName,
                 HashPassword = BCrypt.Net.BCrypt.HashPassword(registerUserRequest.Password),

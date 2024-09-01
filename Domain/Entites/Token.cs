@@ -23,6 +23,6 @@ namespace Domain.Entites
         [ForeignKey("ApplicationUser")]
         public int UserId { get; set; }
 
-        public ApplicationUser ApplicationUser { get; set; } = null!;
+        public User ApplicationUser { get; set; } = null!;
     }
 }
