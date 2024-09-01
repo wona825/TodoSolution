@@ -3,7 +3,6 @@ using System.Security.Claims;
 using Application.Contracts;
 using Application.DTOs.Request;
 using Application.DTOs.Response;
-using Domain.Entites;
 using Infrasfructure.Error;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

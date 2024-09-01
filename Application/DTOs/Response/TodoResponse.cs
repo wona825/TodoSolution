@@ -10,7 +10,8 @@ namespace Application.DTOs.Response
         [property: JsonPropertyName("title")] string Title,
         [property: JsonPropertyName("description")] string Description,
         [property: JsonPropertyName("status")] string Status,
-        [property: JsonPropertyName("created_at")] DateTime CreatedAt
+        [property: JsonPropertyName("created_at")] DateTime CreatedAt,
+        [property: JsonPropertyName("updated_at")] DateTime UpdatedAt
     );
 }
 

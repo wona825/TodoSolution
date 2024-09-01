@@ -31,15 +31,27 @@ namespace WebAPI.Controllers
             }
         }
 
-        [HttpGet()]
-        public async Task<ActionResult<PagedTodoResponse>> GetAllTodosAsync(
+        [HttpGet("/offset-based")]
+        public async Task<ActionResult<OffsetPaginatedTodoResponse>> GetAllTodosWithOffsetPaginationAsync(
             [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "todo_status")] TodoStatus? todoStatus,
             [FromQuery] string? username,
             [FromQuery] string? title,
             [FromQuery(Name = "page_number")] int? pageNumber,
             [FromQuery(Name = "page_size")] int? pageSize)
         {
-            var todos = await _todo.GetAllTodosAsync(todoStatus, username, title, pageNumber, pageSize);
+            var todos = await _todo.GetAllTodosWithOffsetPaginationAsync(todoStatus, username, title, pageNumber, pageSize);
+            return Ok(todos);
+        }
+
+        [HttpGet("/cursor-based")]
+        public async Task<ActionResult<CursorPaginatedTodoResponse>> GetAllTodosWithCursorPaginationByUpdatedAsync(
+            [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "todo_status")] TodoStatus? todoStatus,
+            [FromQuery] string? username,
+            [FromQuery] string? title,
+            [FromQuery(Name = "cursor")] string? cursor,
+            [FromQuery] int? size)
+        {
+            var todos = await _todo.GetAllTodosWithCustomCursorPaginationAsync(todoStatus, username, title, cursor, size);
             return Ok(todos);
         }
 

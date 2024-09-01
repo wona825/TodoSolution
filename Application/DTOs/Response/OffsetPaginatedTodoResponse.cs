@@ -2,7 +2,7 @@
 
 namespace Application.DTOs.Response
 {
-	public record PagedTodoResponse
+	public record OffsetPaginatedTodoResponse
 	(
         [property: JsonPropertyName("todos")] IEnumerable<TodoResponse> Todos,
         [property: JsonPropertyName("total_count")] int TotalCount,

@@ -22,6 +22,9 @@ namespace Domain.Entites
         [Required]
         public required DateTime CreatedAt { get; set; }
 
+        [Required]
+        public required DateTime UpdatedAt { get; set; }
+
         public DateTime? DisabledAt { get; set; }
 
         public int? OwnerId { get; set; }

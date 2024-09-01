@@ -82,6 +82,7 @@ namespace Infrasfructure.Repo
                         Description = description,
                         Status = TodoStatus.BackLog,
                         CreatedAt = createdAt,
+                        UpdatedAt = createdAt,
                         DisabledAt = disabledAt
                     };
                     todos.Add(todo);
@@ -95,7 +96,7 @@ namespace Infrasfructure.Repo
 
 
         /// <summary>
-        /// 필터링을 통한 투두 데이터 리스트 조회 메소드 
+        /// 필터링을 통한 투두 데이터 리스트 조회 메소드 (offset-based-pagination, by updated datetime & id)
         /// </summary>
         /// <param name="todoStatus"></param>
         /// <param name="username"></param>
@@ -103,7 +104,7 @@ namespace Infrasfructure.Repo
         /// <param name="pageNum"></param>
         /// <param name="pageSize"></param>
         /// <returns></returns>
-        public async Task<PagedTodoResponse> GetAllTodosAsync(TodoStatus? todoStatus, string? username, string? title, int? pageNum, int? pageSize)
+        public async Task<OffsetPaginatedTodoResponse> GetAllTodosWithOffsetPaginationAsync(TodoStatus? todoStatus, string? username, string? title, int? pageNum, int? pageSize)
         {
             var query = _appDbContext.Todos
                 .Include(todo => todo.Owner)
@@ -133,10 +134,16 @@ namespace Infrasfructure.Repo
             int defaultPageNum = Math.Max(pageNum.GetValueOrDefault(1), 1); 
             int skip = (defaultPageNum - 1) * defaultPageSize;
 
-            var todos = await query.Skip(skip).Take(defaultPageSize).ToListAsync();
+            var todos = await query
+                .OrderByDescending(todo => todo.UpdatedAt)
+                .ThenByDescending(todo => todo.Id)
+                .Skip(skip)
+                .Take(defaultPageSize)
+                .ToListAsync();
+
             int totalPages = (int)Math.Ceiling(totalCount / (double)defaultPageSize);
 
-            return new PagedTodoResponse(
+            return new OffsetPaginatedTodoResponse(
                 todos.Select(todo => new TodoResponse(
                     todo.Id,
                     todo.OwnerId,
@@ -144,11 +151,100 @@ namespace Infrasfructure.Repo
                     todo.Title,
                     todo.Description,
                     todo.Status.ToString(),
-                    todo.CreatedAt
+                    todo.CreatedAt,
+                    todo.UpdatedAt
                 )),
                 totalCount,
                 totalPages,
                 defaultPageNum
+            );
+        }
+
+        /// <summary>
+        /// 필터링을 통한 투두 데이터 리스트 조회 메소드 (cursor-based-pagination, by updated datetime & id)
+        /// </summary>
+        /// <param name="todoStatus"></param>
+        /// <param name="username"></param>
+        /// <param name="title"></param>
+        /// <param name="cursor"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        public async Task<CursorPaginatedTodoResponse> GetAllTodosWithCustomCursorPaginationAsync(
+            TodoStatus? todoStatus, string? username, string? title, string? cursor, int? size)
+        {
+            var query = _appDbContext.Todos
+                .Include(todo => todo.Owner)
+                .Where(todo => todo.DisabledAt == null);
+
+            if (todoStatus.HasValue)
+            {
+                query = query.Where(todo => todo.Status == todoStatus.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                query = query.Where(todo => todo.Title.Contains(title));
+            }
+
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                query = query.Where(todo => todo.Owner != null && todo.Owner.UserName.Contains(username));
+            }
+
+            int totalCount = await query.CountAsync();
+            int defaultPageSize = size.GetValueOrDefault(totalCount);
+
+            // 커서 파싱
+            DateTime? cursorUpdatedAt = null;
+            int? cursorId = null;
+
+            if (!string.IsNullOrWhiteSpace(cursor))
+            {
+                var parts = cursor.Split('_');
+                if (parts.Length == 2 && DateTime.TryParse(parts[0], out var parsedDate) && int.TryParse(parts[1], out var parsedId))
+                {
+                    cursorUpdatedAt = parsedDate;
+                    cursorId = parsedId;
+                }
+            }
+            
+
+            // 커서에 따른 필터링
+            if (cursorUpdatedAt.HasValue && cursorId.HasValue)
+            {
+                query = query.Where(todo => todo.UpdatedAt < cursorUpdatedAt
+                    || (todo.UpdatedAt == cursorUpdatedAt && todo.Id < cursorId));
+            }
+
+            // UpdatedAt 내림차순, Id 내림차순으로 정렬
+            var todos = await query
+                .OrderByDescending(todo => todo.UpdatedAt)
+                .ThenByDescending(todo => todo.Id)
+                .Take(defaultPageSize)
+                .ToListAsync();
+
+            // 다음 페이지의 커서 생성
+            string? nextCursor = null;
+            if (todos.Count == defaultPageSize)
+            {
+                var lastTodo = todos.Last();
+                nextCursor = $"{lastTodo.UpdatedAt:O}_{lastTodo.Id}";
+            }
+
+            return new CursorPaginatedTodoResponse(
+                todos.Select(todo => new TodoResponse(
+                    todo.Id,
+                    todo.OwnerId,
+                    todo.Owner?.UserName ?? string.Empty,
+                    todo.Title,
+                    todo.Description,
+                    todo.Status.ToString(),
+                    todo.CreatedAt,
+                    todo.UpdatedAt
+                )),
+                totalCount,
+                nextCursor,
+                defaultPageSize
             );
         }
 
@@ -189,6 +285,8 @@ namespace Infrasfructure.Repo
                 todo.Owner = user;
                 todo.OwnerId = userId;
             }
+
+            todo.UpdatedAt = DateTime.Now;
             await _appDbContext.SaveChangesAsync();
         }
 
@@ -228,6 +326,7 @@ namespace Infrasfructure.Repo
                 todo.Description = updateTodoDetailsRequest.Description;
             }
 
+            todo.UpdatedAt = DateTime.Now;
             await _appDbContext.SaveChangesAsync();
         }
 
@@ -251,7 +350,7 @@ namespace Infrasfructure.Repo
                 .FirstOrDefaultAsync(t => t.Id == id)
                 ?? throw new CustomException(HttpStatusCode.NotFound, "Todo not found.");
 
-            if (todo.OwnerId != userId)
+            if (todo.OwnerId != null && todo.OwnerId != userId)
             {
                 throw new CustomException(HttpStatusCode.Forbidden, "No permission to update todo details.");
             }
