@@ -31,7 +31,7 @@ namespace WebAPI.Controllers
             }
         }
 
-        [HttpGet("/offset-based")]
+        [HttpGet("offset-based")]
         public async Task<ActionResult<OffsetPaginatedTodoResponse>> GetAllTodosWithOffsetPaginationAsync(
             [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "todo_status")] TodoStatus? todoStatus,
             [FromQuery] string? username,
@@ -43,7 +43,7 @@ namespace WebAPI.Controllers
             return Ok(todos);
         }
 
-        [HttpGet("/cursor-based")]
+        [HttpGet("cursor-based")]
         public async Task<ActionResult<CursorPaginatedTodoResponse>> GetAllTodosWithCursorPaginationByUpdatedAsync(
             [ModelBinder(BinderType = typeof(EnumModelBinder<TodoStatus>), Name = "todo_status")] TodoStatus? todoStatus,
             [FromQuery] string? username,

@@ -134,6 +134,7 @@ namespace Infrasfructure.Repo
             int defaultPageNum = Math.Max(pageNum.GetValueOrDefault(1), 1); 
             int skip = (defaultPageNum - 1) * defaultPageSize;
 
+            // UpdatedAt DESC, Id DESC으로 정렬
             var todos = await query
                 .OrderByDescending(todo => todo.UpdatedAt)
                 .ThenByDescending(todo => todo.Id)
@@ -207,7 +208,6 @@ namespace Infrasfructure.Repo
                     cursorId = parsedId;
                 }
             }
-            
 
             // 커서에 따른 필터링
             if (cursorUpdatedAt.HasValue && cursorId.HasValue)
@@ -216,7 +216,7 @@ namespace Infrasfructure.Repo
                     || (todo.UpdatedAt == cursorUpdatedAt && todo.Id < cursorId));
             }
 
-            // UpdatedAt 내림차순, Id 내림차순으로 정렬
+            // UpdatedAt DESC, Id DESC으로 정렬
             var todos = await query
                 .OrderByDescending(todo => todo.UpdatedAt)
                 .ThenByDescending(todo => todo.Id)
